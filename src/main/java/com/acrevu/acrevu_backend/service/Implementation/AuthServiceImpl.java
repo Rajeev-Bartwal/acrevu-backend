@@ -1,67 +1,76 @@
 package com.acrevu.acrevu_backend.service.Implementation;
 
-import com.acrevu.acrevu_backend.dto.RegisterUser;
+import com.acrevu.acrevu_backend.entity.RegisterUser;
+import com.acrevu.acrevu_backend.dto.UserDTO;
 import com.acrevu.acrevu_backend.dto.VerifyOtpReq;
 import com.acrevu.acrevu_backend.entity.User;
 import com.acrevu.acrevu_backend.enums.Role;
 import com.acrevu.acrevu_backend.enums.UserStatus;
+import com.acrevu.acrevu_backend.exception.BadRequestException;
+import com.acrevu.acrevu_backend.repository.RegisterRepo;
 import com.acrevu.acrevu_backend.repository.UserRepository;
 import com.acrevu.acrevu_backend.service.AuthService;
 import com.acrevu.acrevu_backend.service.EmailService;
 import com.acrevu.acrevu_backend.util.OtpUtil;
+import org.modelmapper.ModelMapper;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Service
 public class AuthServiceImpl implements AuthService {
 
     private final UserRepository userRepository;
+    private final RegisterRepo registerRepo;
     private final EmailService emailService;
     private final PasswordEncoder passwordEncoder;
+    private final ModelMapper modelMapper;
 
     public AuthServiceImpl(UserRepository userRepository,
                            EmailService emailService,
-                           PasswordEncoder passwordEncoder) {
+                           PasswordEncoder passwordEncoder,
+                           ModelMapper modelMapper,
+                           RegisterRepo registerRepo) {
         this.userRepository = userRepository;
         this.emailService = emailService;
         this.passwordEncoder = passwordEncoder;
+        this.modelMapper = modelMapper;
+        this.registerRepo = registerRepo;
     }
 
 
-    public String registerUser(RegisterUser request) {
+    public UserDTO registerUser(RegisterUser request) {
 
         if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new RuntimeException("Email already registered");
+            throw new BadRequestException("Email already registered");
         }
+
+
 
         final var role = getRole(request);
 
         String otp = OtpUtil.generateOtp();
 
-        User user = User.builder()
+        RegisterUser user = RegisterUser.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .role(role)
                 .status(UserStatus.PENDING)
+                .accountType(request.getAccountType())
                 .emailOtp(otp)
                 .otpExpiry(LocalDateTime.now().plusMinutes(5))
                 .emailVerified(false)
-                .mobileNumber(request.getMobileNumber())
-                .address(request.getAddress())
-                .city(request.getCity())
-                .state(request.getState())
-                .pincode(request.getPincode())
-                .build();
-
-
-        userRepository.save(user);
+                .mobileNumber(
+                request.getMobileNumber() != null && !request.getMobileNumber().isBlank()
+                        ? request.getMobileNumber()
+                        : null
+        ).build();
 
         emailService.sendOTP(user.getEmail(), otp);
 
-        return "User registered successfully. OTP sent to email.";
+        return modelMapper.map(registerRepo.save(user), UserDTO.class);
     }
 
     private static Role getRole(RegisterUser request) {
@@ -75,46 +84,34 @@ public class AuthServiceImpl implements AuthService {
                 throw new RuntimeException("Mobile number is required for dealer");
             }
 
-            if (request.getAddress() == null || request.getAddress().isBlank()) {
-                throw new RuntimeException("Address is required for dealer");
-            }
 
-            if (request.getCity() == null || request.getCity().isBlank()) {
-                throw new RuntimeException("City is required for dealer");
-            }
-
-            if (request.getState() == null || request.getState().isBlank()) {
-                throw new RuntimeException("State is required for dealer");
-            }
-
-            if (request.getPincode() == null || request.getPincode().isBlank()) {
-                throw new RuntimeException("Pincode is required for dealer");
-            }
         }
+
         return role;
     }
 
 
     public String verifyOtp(VerifyOtpReq request) {
-        User user = userRepository.findByEmail(request.getEmail())
+        RegisterUser user = registerRepo.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("User not found"));
 
         if (!user.getEmailOtp().equals(request.getOtp())) {
-            throw new RuntimeException("Invalid OTP");
+            throw new BadRequestException("Invalid OTP");
         }
 
         if (user.getOtpExpiry().isBefore(LocalDateTime.now())) {
-            throw new RuntimeException("OTP expired");
+            throw new BadRequestException("OTP expired");
         }
 
-        user.setStatus(UserStatus.ACTIVE);
-        user.setEmailVerified(true);
-        user.setEmailOtp(null);
-        user.setOtpExpiry(null);
-        user.setCreatedAt(LocalDateTime.now());
 
+        User newUser = modelMapper.map(user , User.class);
+        newUser.setId(null);
+        newUser.setCreatedAt(LocalDateTime.now());
+        newUser.setStatus(UserStatus.ACTIVE);
+        newUser.setRole(Objects.equals(user.getAccountType(), "DEALER") ? Role.DEALER : Role.USER);
 
-        userRepository.save(user);
+        userRepository.save(newUser);
+//        registerRepo.delete(user);
 
         return "OTP verified successfully.";
     }
