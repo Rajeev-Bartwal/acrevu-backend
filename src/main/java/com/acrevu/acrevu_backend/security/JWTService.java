@@ -1,5 +1,6 @@
 package com.acrevu.acrevu_backend.security;
 
+import com.acrevu.acrevu_backend.entity.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.io.Decoders;
@@ -31,20 +32,22 @@ public class JWTService{
         }
     }
 
-    public String generateToken(String username) {
+    public String generateToken(User user) {
 
-        Map<String , Object> claims = new HashMap<>();
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("email", user.getEmail());
+        claims.put("mobile", user.getMobileNumber());
+        claims.put("role", user.getRole().name());
 
         return Jwts.builder()
                 .claims()
                 .add(claims)
-                .subject(username)
+                .subject(user.getEmail())
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
                 .and()
                 .signWith(getKey())
                 .compact();
-
     }
 
     private SecretKey getKey() {
@@ -60,6 +63,7 @@ public class JWTService{
 
     private <T> T extractClaim(String token, Function<Claims, T> claimResolver) {
         Claims claims = extractAllClaims(token);
+        System.out.println(claims);
 
         return  claimResolver.apply(claims);
 
@@ -77,6 +81,9 @@ public class JWTService{
     public boolean validateToken(String token, UserDetails userDetails) {
 
         final String userName = getUserName(token);
+        System.out.println(userName);
+        System.out.println(userDetails.getUsername());
+        System.out.println(userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
 
         return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
     }

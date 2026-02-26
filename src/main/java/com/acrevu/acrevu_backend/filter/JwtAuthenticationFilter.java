@@ -33,14 +33,18 @@ public  class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
 
-        //Only work with request
+
         String authHeader = request.getHeader("Authorization");
+
+
+        //Only work with request
         String token = null;
         String username = null;
 
         //Get token....
         if(authHeader != null && authHeader.startsWith("Bearer")) {
             token = authHeader.substring(7);
+            System.out.println("JWT Token: " + token);
             try {
                 username = jwtService.getUserName(token);
             }catch(IllegalArgumentException e)
@@ -56,6 +60,7 @@ public  class JwtAuthenticationFilter extends OncePerRequestFilter {
         if(username != null && SecurityContextHolder.getContext().getAuthentication() == null){
 
             UserDetails userDetails = context.getBean(CustomUserDetailService.class).loadUserByUsername(username);
+            System.out.println("User Details: " + userDetails);
 
             if(jwtService.validateToken(token , userDetails)){
                 UsernamePasswordAuthenticationToken authToken =
@@ -65,6 +70,7 @@ public  class JwtAuthenticationFilter extends OncePerRequestFilter {
                 SecurityContextHolder.getContext().setAuthentication(authToken);
             }
         }
+
 
         filterChain.doFilter(request,response);
     }

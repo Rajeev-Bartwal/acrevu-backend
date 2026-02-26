@@ -9,6 +9,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class JwtAuthRequest {
 
-    private String username;
+    private String identifier;
     private String password;
 }

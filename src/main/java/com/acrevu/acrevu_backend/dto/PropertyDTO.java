@@ -1,20 +1,10 @@
-package com.acrevu.acrevu_backend.entity;
+package com.acrevu.acrevu_backend.dto;
 
-import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-import java.time.LocalDateTime;
-
-@Entity
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
-public class Property {
+public class PropertyDTO {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     private String userType;
@@ -47,12 +37,4 @@ public class Property {
 
     private String description;
     private String amenities;
-
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
-
-    // RELATIONSHIP
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
 }
