@@ -50,4 +50,13 @@ public class PropertyController {
 
         return  new ResponseEntity<>(apiResponse , HttpStatus.OK);
     }
+
+    @GetMapping("/my")
+    public ResponseEntity<ApiResponse<Object>> getMyProperties(@AuthenticationPrincipal User user) {
+        System.out.println("getMyProperties");
+
+        propertyService.getAllMyProperties(user);
+        ApiResponse<Object> apiResponse = ApiResponse.builder().build();
+        return  new ResponseEntity<>(apiResponse , HttpStatus.OK);
+    }
 }

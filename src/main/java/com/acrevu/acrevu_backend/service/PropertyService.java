@@ -10,4 +10,6 @@ public interface PropertyService {
     PropertyDTO addProperty(PropertyDTO propertyDTO, User user);
 
     List<PropertyDTO> getAllProperties();
+
+    List<PropertyDTO> getPropertyByUserId(User user);
 }

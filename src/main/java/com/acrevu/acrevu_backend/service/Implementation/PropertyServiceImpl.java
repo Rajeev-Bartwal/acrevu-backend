@@ -48,5 +48,19 @@ public class PropertyServiceImpl implements PropertyService {
         return propertyDTOS;
     }
 
+    @Override
+    public List<PropertyDTO> getPropertyByUserId(User user) {
+        Long userId = user.getId();
+
+        List<Property> usersProperties = propertyRepository.findAllByUser(userId);
+
+        List<PropertyDTO> propertyDTOS = new ArrayList<>();
+        for(Property property : usersProperties) {
+            propertyDTOS.add(modelMapper.map(property, PropertyDTO.class));
+        }
+
+        return propertyDTOS;
+    }
+
 
 }
