@@ -1,4 +1,13 @@
 package com.acrevu.acrevu_backend.repository;
 
-public interface PropertyRepository {
+import com.acrevu.acrevu_backend.entity.Property;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.stereotype.Repository;
+import org.springframework.web.bind.annotation.RequestBody;
+
+import java.util.List;
+
+@Repository
+public interface PropertyRepository extends JpaRepository<Property, Integer> {
+    List<Property> findAllByUser(Long userId);
 }

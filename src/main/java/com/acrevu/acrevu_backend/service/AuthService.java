@@ -1,11 +1,12 @@
 package com.acrevu.acrevu_backend.service;
 
-import com.acrevu.acrevu_backend.dto.RegisterUser;
+import com.acrevu.acrevu_backend.entity.RegisterUser;
+import com.acrevu.acrevu_backend.dto.UserDTO;
 import com.acrevu.acrevu_backend.dto.VerifyOtpReq;
 
 public interface AuthService {
 
-    String registerUser(RegisterUser  registerUser);
+    UserDTO registerUser(RegisterUser  registerUser);
 
     String verifyOtp(VerifyOtpReq request);
 }
