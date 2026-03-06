@@ -4,6 +4,9 @@ package com.acrevu.acrevu_backend.controller;
 import com.acrevu.acrevu_backend.dto.*;
 import com.acrevu.acrevu_backend.entity.RegisterUser;
 import com.acrevu.acrevu_backend.entity.User;
+import com.acrevu.acrevu_backend.exception.BadRequestException;
+import com.acrevu.acrevu_backend.exception.ResourceNotFoundException;
+import com.acrevu.acrevu_backend.repository.UserRepository;
 import com.acrevu.acrevu_backend.security.JWTService;
 import com.acrevu.acrevu_backend.service.AuthService;
 import jakarta.validation.Valid;
@@ -21,6 +24,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RestController
 @RequestMapping("/api/auth")
 public class AuthController {
@@ -32,20 +37,23 @@ public class AuthController {
     private final UserDetailsService userDetailsService;
     private final JWTService jwtService;
     private final ModelMapper modelMapper;
+    private final UserRepository userRepository;
 
     @Autowired
     public AuthController(AuthService authService,
                           UserDetailsService userDetailsService,
                           JWTService jwtService
-                          ,ModelMapper modelMapper) {
+                          ,ModelMapper modelMapper,
+                          UserRepository userRepository) {
         this.authService = authService;
         this.userDetailsService = userDetailsService;
         this.jwtService = jwtService;
         this.modelMapper = modelMapper;
+        this.userRepository = userRepository;
     }
 
     @PostMapping("/register")
-    public ResponseEntity<ApiResponse<Object>> register(@RequestBody RegisterUser request) {
+    public ResponseEntity<ApiResponse<Object>> register(@RequestBody RegisterReq request) {
 
         ApiResponse<Object> apiResponse = ApiResponse.builder()
                 .message("Opt Sent successFully")
@@ -79,24 +87,54 @@ public class AuthController {
                 User user = (User) userDetailsService
                         .loadUserByUsername(jwtAuthRequest.getIdentifier());
 
-                // Generate token using USER (not identifier)
-                String token = jwtService.generateToken(user);
+                String accessToken = jwtService.generateAccessToken(user);
+                String refreshToken = jwtService.generateRefreshToken(user);
 
-                JwtAuthResponse response = new JwtAuthResponse();
-                response.setUser(modelMapper.map(user, UserDTO.class));
-                response.setToken(token);
+                UserDTO userDTO = modelMapper.map(user, UserDTO.class);
+                JwtAuthResponse response = new JwtAuthResponse(accessToken, refreshToken, userDTO);
 
                 return new ResponseEntity<>(response, HttpStatus.OK);
             }
 
         } catch (BadCredentialsException ex) {
-            throw ex;
+            throw new BadRequestException(ex.getMessage());
         }
 
         return new ResponseEntity<>(
                 new ApiResponse<>(false, "Bad Credentials", HttpStatus.BAD_REQUEST),
-                HttpStatus.UNAUTHORIZED
+                HttpStatus.BAD_REQUEST
         );
+    }
+
+    @PostMapping("/refresh")
+    public ResponseEntity<?> refreshToken(@RequestBody RefreshTokenRequest request) {
+
+        String refreshToken = request.getRefreshToken();
+
+        try {
+            String email = jwtService.getUserName(refreshToken);
+
+            if (!jwtService.isTokenExpired(refreshToken)) {
+
+                User user = userRepository.findByEmail(email)
+                        .orElseThrow(() -> new ResourceNotFoundException("User", "User not found", email));
+
+                String newAccessToken = jwtService.generateAccessToken(user);
+
+                UserDTO userDTO = modelMapper.map(user, UserDTO.class);
+
+                JwtAuthResponse response =
+                        new JwtAuthResponse(newAccessToken, refreshToken, userDTO);
+
+                return ResponseEntity.ok(response);
+            }
+
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body("Refresh token expired or invalid");
+        }
+
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
     }
 
 }

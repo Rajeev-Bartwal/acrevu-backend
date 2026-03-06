@@ -2,6 +2,7 @@ package com.acrevu.acrevu_backend.security;
 
 import com.acrevu.acrevu_backend.entity.User;
 import com.acrevu.acrevu_backend.enums.UserStatus;
+import com.acrevu.acrevu_backend.exception.ResourceNotFoundException;
 import com.acrevu.acrevu_backend.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -23,12 +24,12 @@ public class CustomUserDetailService implements UserDetailsService {
         // Check if mobile (10 digits)
         if (identifier.matches("\\d{10}")) {
             user = userRepo.findByMobileNumber(identifier)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found with mobile"));
+                    .orElseThrow(() -> new ResourceNotFoundException("user" , identifier ,  "mobile number"));
         }
         // Otherwise treat as email
         else {
             user = userRepo.findByEmail(identifier)
-                    .orElseThrow(() -> new UsernameNotFoundException("User not found with email"));
+                    .orElseThrow(() -> new ResourceNotFoundException("user" , identifier ,  "email"));
         }
         return user;
     }

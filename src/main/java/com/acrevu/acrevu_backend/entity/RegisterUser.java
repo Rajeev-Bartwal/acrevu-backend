@@ -42,6 +42,12 @@ public class RegisterUser {
         private String emailOtp;
         private LocalDateTime otpExpiry;
         private Boolean emailVerified = false;
+
+        private String companyName;
+
+        @Lob
+        @Column(columnDefinition = "TEXT")
+        private String dealerPreferencesJson;
 }
 
 

@@ -1,15 +1,17 @@
 package com.acrevu.acrevu_backend.service.Implementation;
 
+import com.acrevu.acrevu_backend.dto.PageResponse;
 import com.acrevu.acrevu_backend.dto.PropertyDTO;
 import com.acrevu.acrevu_backend.entity.Property;
 import com.acrevu.acrevu_backend.entity.User;
 import com.acrevu.acrevu_backend.repository.PropertyRepository;
 import com.acrevu.acrevu_backend.service.PropertyService;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
 import org.springframework.stereotype.Service;
 
+import org.springframework.data.domain.Pageable;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
 
 
@@ -26,7 +28,6 @@ public class PropertyServiceImpl implements PropertyService {
     @Override
     public PropertyDTO addProperty(PropertyDTO propertyDTO, User user) {
 
-        System.out.println("addProperty");
         Property property = modelMapper.map(propertyDTO, Property.class);
         property.setUser(user);
         property.setCreatedAt(LocalDateTime.now());
@@ -36,30 +37,27 @@ public class PropertyServiceImpl implements PropertyService {
     }
 
     @Override
-    public List<PropertyDTO> getAllProperties() {
+    public PageResponse<PropertyDTO> getAllProperties(Pageable pageable) {
         System.out.println("getAllProperties");
-        List<Property> properties =  propertyRepository.findAll();
-        List<PropertyDTO> propertyDTOS = new ArrayList<>();
+        Page<PropertyDTO> page = propertyRepository.findAllPropertyDTO(pageable);
 
-        for(Property property : properties) {
-            propertyDTOS.add(modelMapper.map(property, PropertyDTO.class));
-        }
-
-        return propertyDTOS;
+        return new PageResponse<>(
+                page.getContent(),
+                page.getNumber(),
+                page.getSize(),
+                page.getTotalElements(),
+                page.getTotalPages(),
+                page.isLast()
+        );
     }
 
     @Override
     public List<PropertyDTO> getPropertyByUserId(User user) {
         Long userId = user.getId();
 
-        List<Property> usersProperties = propertyRepository.findAllByUser(userId);
-
-        List<PropertyDTO> propertyDTOS = new ArrayList<>();
-        for(Property property : usersProperties) {
-            propertyDTOS.add(modelMapper.map(property, PropertyDTO.class));
-        }
-
-        return propertyDTOS;
+        return propertyRepository.findByUser_Id(userId).stream()
+                .map(property -> modelMapper.map(property, PropertyDTO.class))
+                .toList();
     }
 
 

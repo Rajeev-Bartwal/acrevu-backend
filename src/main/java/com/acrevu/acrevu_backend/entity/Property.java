@@ -17,12 +17,12 @@ public class Property {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private String userType;
     private String listingType;
     private String propertyType;
     private String category;
     private String bhk;
     private String area;
+    private String areaUnit; // "sqft", "sqyard", "sqmeter"
 
     private String city;
     private String locality;
@@ -51,7 +51,7 @@ public class Property {
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
-    // RELATIONSHIP
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User user;

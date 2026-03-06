@@ -8,4 +8,6 @@ import java.util.Optional;
 public interface RegisterRepo extends JpaRepository<RegisterUser, Integer> {
 
     Optional<RegisterUser> findByEmail(String email);
+
+    Optional<RegisterUser> findByEmailOrMobileNumber(String username, String mobileNumber);
 }

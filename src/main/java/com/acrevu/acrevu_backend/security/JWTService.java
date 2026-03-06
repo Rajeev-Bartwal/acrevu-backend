@@ -32,7 +32,7 @@ public class JWTService{
         }
     }
 
-    public String generateToken(User user) {
+    public String generateAccessToken(User user) {
 
         Map<String, Object> claims = new HashMap<>();
         claims.put("email", user.getEmail());
@@ -46,6 +46,16 @@ public class JWTService{
                 .issuedAt(new Date(System.currentTimeMillis()))
                 .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 30))
                 .and()
+                .signWith(getKey())
+                .compact();
+    }
+
+    public String generateRefreshToken(User user) {
+
+        return Jwts.builder()
+                .subject(user.getEmail())
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000L * 60 * 60 * 24 * 7)) // 7 days
                 .signWith(getKey())
                 .compact();
     }
@@ -79,16 +89,10 @@ public class JWTService{
     }
 
     public boolean validateToken(String token, UserDetails userDetails) {
-
-        final String userName = getUserName(token);
-        System.out.println(userName);
-        System.out.println(userDetails.getUsername());
-        System.out.println(userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
-
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+        return (getUserName(token).equals(userDetails.getUsername()) && !isTokenExpired(token));
     }
 
-    private boolean isTokenExpired(String token) {
+    public boolean isTokenExpired(String token) {
         return extractExpiration(token).before(new Date());
 
     }
@@ -96,6 +100,5 @@ public class JWTService{
     private Date extractExpiration(String token) {
         return extractClaim(token , Claims::getExpiration);
     }
-
 
 }
