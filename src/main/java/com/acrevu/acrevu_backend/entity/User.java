@@ -46,6 +46,9 @@ public class User implements UserDetails {
     private String state;
     private String pincode;
 
+    @Column(name = "company_name")
+    private String companyName;
+
 
     @Enumerated(EnumType.STRING)
     private Role role;

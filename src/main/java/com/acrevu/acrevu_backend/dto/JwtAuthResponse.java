@@ -1,15 +1,14 @@
 package com.acrevu.acrevu_backend.dto;
 
-import com.acrevu.acrevu_backend.entity.User;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
 public class JwtAuthResponse {
 
-    private String token;
+    private String accessToken;
+    private String refreshToken;
     private UserDTO user;
+
 }
