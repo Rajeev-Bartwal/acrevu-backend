@@ -1,6 +1,7 @@
 package com.acrevu.acrevu_backend.filter;
 
 
+import com.acrevu.acrevu_backend.exception.TokenIsExpired;
 import com.acrevu.acrevu_backend.security.CustomUserDetailService;
 import com.acrevu.acrevu_backend.security.JWTService;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -49,9 +50,9 @@ public  class JwtAuthenticationFilter extends OncePerRequestFilter {
                 username = jwtService.getUserName(token);
             }catch(IllegalArgumentException e)
             {
-                System.out.println(e + "jwt token is not valid");
+                throw new RuntimeException("Jwt Token is not valid");
             }catch(ExpiredJwtException e){
-                System.out.println("Token is expired..");
+                throw new TokenIsExpired("Token is expired");
             }
         }
 

@@ -1,13 +1,18 @@
 package com.acrevu.acrevu_backend.service.Implementation;
 
+import com.acrevu.acrevu_backend.Specification.PropertySpecification;
 import com.acrevu.acrevu_backend.dto.PageResponse;
 import com.acrevu.acrevu_backend.dto.PropertyDTO;
+import com.acrevu.acrevu_backend.dto.PropertyFilterDTO;
 import com.acrevu.acrevu_backend.entity.Property;
 import com.acrevu.acrevu_backend.entity.User;
 import com.acrevu.acrevu_backend.repository.PropertyRepository;
 import com.acrevu.acrevu_backend.service.PropertyService;
+import jakarta.servlet.ServletOutputStream;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import org.springframework.data.domain.Pageable;
@@ -40,6 +45,7 @@ public class PropertyServiceImpl implements PropertyService {
     public PageResponse<PropertyDTO> getAllProperties(Pageable pageable) {
         System.out.println("getAllProperties");
         Page<PropertyDTO> page = propertyRepository.findAllPropertyDTO(pageable);
+        System.out.println(page);
 
         return new PageResponse<>(
                 page.getContent(),
@@ -60,5 +66,30 @@ public class PropertyServiceImpl implements PropertyService {
                 .toList();
     }
 
+    public PageResponse<PropertyDTO> filterProperties(PropertyFilterDTO filterDTO
+    ,Pageable pageable) {
+        Page<Property> page = propertyRepository.findAll(PropertySpecification.filter(filterDTO), pageable);
+        List<PropertyDTO> dtos = page.getContent().stream()
+                .map(property -> {
+                    PropertyDTO dto = modelMapper.map(property, PropertyDTO.class);
 
+                    if (property.getUser() != null && property.getUser().getRole() != null) {
+                        dto.setUserType(property.getUser().getRole());
+                    }
+
+                    return dto;
+                })
+                .toList();
+
+
+
+         return new PageResponse<>(
+                 dtos,
+                 page.getNumber(),
+                 page.getSize(),
+                 page.getTotalElements(),
+                 page.getTotalPages(),
+                 page.isLast()
+         );
+    }
 }

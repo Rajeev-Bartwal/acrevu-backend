@@ -4,13 +4,13 @@ import com.acrevu.acrevu_backend.enums.Role;
 import lombok.*;
 
 @Data
-@AllArgsConstructor
+//@AllArgsConstructor
 @NoArgsConstructor
 public class PropertyDTO {
 
     private Long id;
 
-    private String userType;
+    private Role userType;
     private String listingType;
     private String propertyType;
     private String category;
@@ -72,7 +72,7 @@ public class PropertyDTO {
             String amenities
     ) {
         this.id = id;
-        this.userType = role.name();
+        this.userType = role;
         this.listingType = listingType;
         this.propertyType = propertyType;
         this.category = category;
